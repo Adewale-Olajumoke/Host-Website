@@ -1,1 +1,28 @@
 # Host-Website
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main   # deploy when pushing to main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: Copy files to EC2
+      run: |
+        scp -o StrictHostKeyChecking=no -r ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/mysite/
+
+    - name: Restart Nginx
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo systemctl restart nginx"
